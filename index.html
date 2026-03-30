@@ -30,6 +30,11 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+body {
+  position: relative;
+  min-height: 100vh;
+}
+
 /* ─────────────────────────────────────────
    AMBIENT BACKGROUND
 ───────────────────────────────────────── */
@@ -99,9 +104,11 @@ html, body {
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
   transition:opacity .9s cubic-bezier(.4,0,.2,1), transform .9s cubic-bezier(.4,0,.2,1);
+  opacity: 1;
+  visibility: visible;
 }
 .stage.out{opacity:0;transform:translateY(55px)scale(.97);pointer-events:none;}
-.stage.gone{display:none;}
+.stage.gone{opacity:0;visibility:hidden;pointer-events:none;}
 
 /* ═══════════════════════════════════════
    STAGE 1 — BOUQUET
@@ -426,6 +433,7 @@ html, body {
   border-top:3px solid rgba(178,142,58,.35);
   animation:cardUnfold .88s cubic-bezier(.4,0,.2,1) both;
   transform-origin:top center;
+  margin: 0 auto;
 }
 @keyframes cardUnfold{
   from{transform:scaleY(0)translateY(-10px);opacity:0;}
@@ -518,6 +526,7 @@ html, body {
   gap:clamp(12px,2.8vw,22px);
   margin-top:clamp(22px,3.8vh,38px);
   animation:lineIn .66s 4.55s both;
+  flex-wrap: wrap;
 }
 .msf{position:relative;animation:sway 3.6s ease-in-out infinite alternate;}
 .msf:nth-child(2){animation-delay:-1.2s;}
@@ -531,6 +540,43 @@ html, body {
   position:absolute;border-radius:50%;
   background:radial-gradient(circle at 38% 38%,#5A2800,#2A1000);
   z-index:5;
+}
+
+@media (max-width: 640px) {
+  .flowers-shelf {
+    transform: scale(0.9);
+    transform-origin: bottom center;
+  }
+
+  .envelope {
+    width: min(88vw, 360px);
+  }
+
+  .letter-card {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  #s1 {
+    padding-bottom: 20px;
+  }
+
+  .flowers-shelf {
+    transform: scale(0.74);
+  }
+
+  .btn-open {
+    padding: 14px 32px;
+  }
+
+  .letter-card {
+    padding: 34px 22px 46px;
+  }
+
+  .margin-line {
+    left: 36px;
+  }
 }
 
 </style>
@@ -810,6 +856,7 @@ function buildSunflower(hostEl, n, pw, ph, cr) {
   hostEl.style.width  = sz + 'px';
   hostEl.style.height = sz + 'px';
   hostEl.style.position = 'relative';
+  hostEl.style.display = 'block';
   for (let i = 0; i < n; i++) {
     const p = document.createElement('div');
     p.className = 'sf-petal';
@@ -832,7 +879,7 @@ function buildSunflower(hostEl, n, pw, ph, cr) {
 
 /* ── Mini sunflower ── */
 function buildMiniSF(el, n, pw, ph, cr) {
-  const cw = parseInt(el.style.width);
+  const cw = parseInt(el.style.width, 10) || el.getBoundingClientRect().width || 52;
   el.style.position = 'relative';
   const R = cw / 2;
   for (let i = 0; i < n; i++) {
@@ -891,7 +938,7 @@ function buildTulip(el, c1, c2, c3) {
 /* ── Cherry blossom ── */
 function buildCherry(el, light) {
   el.style.position = 'relative';
-  const pw = parseInt(el.style.width)||66;
+  const pw = parseInt(el.style.width, 10) || el.getBoundingClientRect().width || 66;
   const R  = pw/2, pW=Math.round(pw*.33), pH=Math.round(pw*.43), cr=Math.round(pw*.14);
   const c1=light?'#FCEEF5':'#FFCCE0', c2=light?'#F48FB1':'#F0608A';
   for (let i=0;i<5;i++){
@@ -915,7 +962,7 @@ function buildCherry(el, light) {
 /* ── Daisy ── */
 function buildDaisy(el, pcol, ccol) {
   el.style.position = 'relative';
-  const pw=parseInt(el.style.width)||58;
+  const pw = parseInt(el.style.width, 10) || el.getBoundingClientRect().width || 58;
   const R=pw/2, pW=Math.round(pw*.22), pH=Math.round(pw*.46), cr=Math.round(pw*.18);
   for(let i=0;i<12;i++){
     const p=document.createElement('div');
@@ -987,33 +1034,57 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('btnOpen');
   const bar = document.getElementById('scrollBar');
 
+  function resetStageState(stage) {
+    stage.classList.remove('out', 'gone');
+  }
+
+  function hideStage(stage) {
+    stage.classList.add('out');
+    window.setTimeout(() => {
+      stage.classList.add('gone');
+      stage.classList.remove('out');
+    }, 900);
+  }
+
+  function showStage(stage) {
+    resetStageState(stage);
+  }
+
   btn.addEventListener('click', () => {
-    s1.classList.add('out');
-    setTimeout(() => {
-      s1.classList.add('gone');
-      s2.classList.remove('gone');
-    }, 960);
+    hideStage(s1);
+    window.setTimeout(() => {
+      showStage(s2);
+    }, 920);
   });
 
   function openEnvelope() {
     if (env.classList.contains('open')) return;
     env.classList.add('open');
-    setTimeout(() => {
-      s2.classList.add('out');
-      setTimeout(() => {
-        s2.classList.add('gone');
-        s3.classList.remove('gone');
+    window.setTimeout(() => {
+      hideStage(s2);
+      window.setTimeout(() => {
+        showStage(s3);
         s3.style.overflowY = 'auto';
-        s3.addEventListener('scroll', () => {
-          const pct = s3.scrollTop / (s3.scrollHeight - s3.clientHeight) * 100;
-          bar.style.width = pct + '%';
-        });
-      }, 960);
+      }, 920);
     }, 1520);
   }
 
+  function updateScrollBar() {
+    const scrollable = s3.scrollHeight - s3.clientHeight;
+    const pct = scrollable > 0 ? (s3.scrollTop / scrollable) * 100 : 100;
+    bar.style.width = pct + '%';
+  }
+
   env.addEventListener('click', openEnvelope);
-  env.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') openEnvelope(); });
+  env.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openEnvelope();
+    }
+  });
+  s3.addEventListener('scroll', updateScrollBar);
+  window.addEventListener('resize', updateScrollBar);
+  updateScrollBar();
 
 });
 </script>
